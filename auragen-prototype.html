@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AuraGen – Prototype</title>
+<style>
+:root{--bg:#f3f6f8;--card:#fff;--tx:#12263a;--mu:#5a6b7b;--ac:#0b7a75;--bd:#d6dfe6;--warn:#b45309;--bad:#b42318}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1a24;--card:#152330;--tx:#e6eef5;--mu:#97a9b9;--ac:#3fc1b9;--bd:#27394a;--warn:#f0a35c;--bad:#ff8a7a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Segoe UI",system-ui,Arial,sans-serif;line-height:1.5}
+header{padding:20px 24px 8px;max-width:1080px;margin:auto}
+h1{margin:0;font-size:1.6rem;letter-spacing:-.01em}
+.sub{color:var(--mu);margin:4px 0 0;max-width:62ch}
+.wrap{max-width:1080px;margin:auto;padding:16px 24px 48px;display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+@media(max-width:820px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:20px}
+.sec{margin:0 0 22px}
+.sec h2{font-size:1.05rem;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
+label{display:block;font-size:.88rem;margin:10px 0 4px;color:var(--mu)}
+input,select{width:100%;padding:9px 10px;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:6px}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:6px;padding:9px 16px;border:1px solid var(--ac);background:var(--ac);color:#fff}
+button.ghost{background:transparent;color:var(--ac)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.side{position:sticky;top:12px}
+.meter{height:14px;border-radius:7px;background:var(--bg);border:1px solid var(--bd);overflow:hidden;margin:8px 0}
+.meter i{display:block;height:100%;transition:width .4s,background .4s}
+.big{font-size:2.4rem;font-weight:700;line-height:1}
+ul.log{list-style:none;padding:0;margin:8px 0 0;font-size:.85rem;color:var(--mu)}
+ul.log li{padding:5px 0;border-top:1px solid var(--bd)}
+.banner{border:1px solid var(--warn);color:var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.prog{display:flex;gap:6px;margin:0 0 16px}
+.prog span{flex:1;height:6px;border-radius:3px;background:var(--bd)}
+.prog span.on{background:var(--ac)}
+.row{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}
+dt{color:var(--mu)}dd{margin:0}
+.note{font-size:.8rem;color:var(--mu);margin-top:14px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// [section, key, label, type, options]  (same fields as form-fields.md)
+const FIELDS = [
+  ["Personal Details","fullName","Full name","text"],
+  ["Personal Details","dob","Date of birth","date"],
+  ["Personal Details","gender","Gender","select",["Female","Male","Other"]],
+  ["Personal Details","mobile","Mobile number","tel"],
+  ["Personal Details","email","Email address","email"],
+  ["Address","address","Current address","text"],
+  ["Address","city","City","text"],
+  ["Address","state","State","text"],
+  ["Address","pin","PIN code","text"],
+  ["Identity (KYC)","pan","PAN number","text"],
+  ["Identity (KYC)","aadhaar","Aadhaar number","text"],
+  ["Employment and Income","empType","Employment type","select",["Salaried","Self-employed","Student"]],
+  ["Employment and Income","employer","Employer name","text"],
+  ["Employment and Income","income","Monthly income (INR)","number"],
+  ["Employment and Income","exp","Years of experience","number"],
+  ["Loan Details","amount","Loan amount (INR)","number"],
+  ["Loan Details","purpose","Loan purpose","select",["Home","Education","Vehicle","Personal"]],
+  ["Loan Details","tenure","Repayment period (months)","number"],
+];
+
+// PLACEHOLDER for the LLM step (planned for Week 3-4).
+// Today: groups fields by section. Later: send FIELDS to an LLM and use the steps it returns.
+function generateWizardSteps(fields) {
+  const steps = [];
+  fields.forEach(f => {
+    let s = steps.find(x => x.title === f[0]);
+    if (!s) { s = { title: f[0], fields: [] }; steps.push(s); }
+    s.fields.push(f);
+  });
+  return steps;
+}
+
+const THRESHOLD = 60;
+
+function Field({ f, value, onChange }) {
+  const [, key, label, type, opts] = f;
+  return (
+    <div>
+      <label htmlFor={key}>{label}</label>
+      {type === "select"
+        ? <select id={key} value={value || ""} onChange={e => onChange(key, e.target.value)}>
+            <option value="">Select…</option>{opts.map(o => <option key={o}>{o}</option>)}
+          </select>
+        : <input id={key} type={type} value={value || ""} onChange={e => onChange(key, e.target.value)} />}
+    </div>
+  );
+}
+
+function App() {
+  const [mode, setMode] = useState("form");
+  const [data, setData] = useState({});
+  const [score, setScore] = useState(0);
+  const [log, setLog] = useState([]);
+  const [step, setStep] = useState(0);
+  const [done, setDone] = useState(false);
+  const [auto, setAuto] = useState(false);
+  const steps = generateWizardSteps(FIELDS);
+  const setVal = (k, v) => setData(d => ({ ...d, [k]: v }));
+
+  const push = (msg, weight) => {
+    setScore(s => Math.min(100, s + weight));
+    setLog(l => [{ t: new Date().toLocaleTimeString(), msg }, ...l].slice(0, 6));
+  };
+
+  // Behaviour tracker (runs only while the long form is shown)
+  useEffect(() => {
+    if (mode !== "form") return;
+    let last = null, lastDir = 0, flips = 0, clicks = [], hes = null;
+    const move = e => {
+      const now = performance.now();
+      if (last) {
+        const dx = e.clientX - last.x, dt = now - last.t || 1;
+        const dir = Math.sign(dx);
+        if (dir && lastDir && dir !== lastDir && Math.abs(dx) / dt > 0.5) flips++;
+        if (dir) lastDir = dir;
+        if (flips >= 6) { push("Erratic mouse movement", 10); flips = 0; }
+      }
+      last = { x: e.clientX, t: now };
+    };
+    const click = () => {
+      const n = Date.now(); clicks.push(n);
+      clicks = clicks.filter(c => n - c < 1500);
+      if (clicks.length >= 4) { push("Rage click (4 clicks in 1.5s)", 25); clicks = []; }
+    };
+    const focus = e => {
+      clearTimeout(hes);
+      const name = e.target.labels && e.target.labels[0] ? e.target.labels[0].textContent : "a field";
+      hes = setTimeout(() => push("Hesitation: stuck on '" + name + "' for 6s", 15), 6000);
+    };
+    const clear = () => clearTimeout(hes);
+    const reset = setInterval(() => { flips = 0; }, 3000);
+    window.addEventListener("mousemove", move);
+    window.addEventListener("click", click);
+    document.addEventListener("focusin", focus);
+    document.addEventListener("input", clear);
+    document.addEventListener("focusout", clear);
+    return () => {
+      clearInterval(reset); clearTimeout(hes);
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("click", click);
+      document.removeEventListener("focusin", focus);
+      document.removeEventListener("input", clear);
+      document.removeEventListener("focusout", clear);
+    };
+  }, [mode]);
+
+  // Score slowly cools down
+  useEffect(() => {
+    const id = setInterval(() => setScore(s => Math.max(0, s - 2)), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Self-healing: switch to wizard when struggle is high
+  useEffect(() => {
+    if (mode === "form" && score >= THRESHOLD) { setMode("wizard"); setAuto(true); setStep(0); }
+  }, [score, mode]);
+
+  const color = score >= THRESHOLD ? "var(--bad)" : score >= 30 ? "var(--warn)" : "var(--ac)";
+  const cur = steps[step];
+
+  return (
+    <>
+      <header>
+        <h1>Personal loan application</h1>
+        <p className="sub">AuraGen prototype: this form watches how you interact with it and turns itself into a short step-by-step wizard if you struggle.</p>
+      </header>
+      <div className="wrap">
+        <main className="card">
+          {mode === "wizard" && auto && !done && (
+            <div className="banner">
+              <span>Looks like this form was hard to fill. We split it into {steps.length} short steps. Your answers are kept.</span>
+              <button className="ghost" onClick={() => { setMode("form"); setAuto(false); setScore(0); }}>Show full form</button>
+            </div>
+          )}
+          {mode === "form" && (
+            <>
+              {steps.map(s => (
+                <section className="sec" key={s.title}>
+                  <h2>{s.title}</h2>
+                  {s.fields.map(f => <Field key={f[1]} f={f} value={data[f[1]]} onChange={setVal} />)}
+                </section>
+              ))}
+              <button onClick={() => setDone(true)}>Submit application</button>
+            </>
+          )}
+          {mode === "wizard" && !done && (
+            <>
+              <div className="prog">{steps.map((s, i) => <span key={s.title} className={i <= step ? "on" : ""} />)}</div>
+              <h2 style={{ marginTop: 0 }}>Step {step + 1} of {steps.length}: {cur.title}</h2>
+              {cur.fields.map(f => <Field key={f[1]} f={f} value={data[f[1]]} onChange={setVal} />)}
+              <div className="row">
+                <button className="ghost" disabled={step === 0} onClick={() => setStep(step - 1)}>Back</button>
+                {step < steps.length - 1
+                  ? <button onClick={() => setStep(step + 1)}>Next</button>
+                  : <button onClick={() => setDone(true)}>Submit application</button>}
+              </div>
+            </>
+          )}
+          {done && (
+            <>
+              <h2 style={{ marginTop: 0 }}>Application summary</h2>
+              <dl>{FIELDS.map(f => <React.Fragment key={f[1]}><dt>{f[2]}</dt><dd>{data[f[1]] || "-"}</dd></React.Fragment>)}</dl>
+              <div className="row"><button className="ghost" onClick={() => { setDone(false); setMode("form"); setAuto(false); setScore(0); setData({}); }}>Start over</button></div>
+            </>
+          )}
+        </main>
+        <aside className="card side">
+          <strong>Live struggle monitor</strong>
+          <div className="big" style={{ color }}>{score}<span style={{ fontSize: "1rem", color: "var(--mu)" }}> / 100</span></div>
+          <div className="meter"><i style={{ width: score + "%", background: color }} /></div>
+          <div className="note" style={{ marginTop: 0 }}>Wizard starts at {THRESHOLD}. Try clicking one spot quickly, or stay on one field for 6 seconds.</div>
+          <ul className="log">
+            {log.length === 0 && <li>No events yet.</li>}
+            {log.map((e, i) => <li key={i}>{e.t} {e.msg}</li>)}
+          </ul>
+          <div className="row" style={{ marginTop: 14 }}>
+            <button className="ghost" onClick={() => push("Simulated rage click", 25)} disabled={mode !== "form"}>Simulate struggle</button>
+          </div>
+          <p className="note">Prototype status: tracking, scoring and wizard run in the browser. The wizard steps come from a rule-based placeholder. WebSocket transport and the real LLM step are not built yet.</p>
+        </aside>
+      </div>
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

@@ -1,31 +1,22 @@
-# AuraGen – Work Distribution
+# AuraGen – Work Distribution (updated 20 Nov)
 
-**Team Lead:** Anika (Anikx09) | **Branch:** anika-aura-gen
+**Team Lead:** Anika Saxena (Anikx09) | **Branch:** anika-aura-gen
 
-## What the project does
-A user struggles with a long financial form. AuraGen watches their behaviour, detects the struggle, and turns the form into a simple step-by-step wizard using AI.
+## Roles
+| Member | Part | Branch | Status |
+|---|---|---|---|
+| Anika Saxena (Team Lead) | Form, tracker, wizard UI, WebSocket server | anika-aura-gen | Active |
+| Mannkumar Chauhan | LLM plan, prompt and testing (to be confirmed) | mannkumar-aura-gen | Joined the repo |
+| Muskan Saikalgar | Tracker (first assigned) | none | No response so far |
+| Naresh Adepu | WebSocket and detector (first assigned) | none | No response so far |
 
-## The 4 parts
-1. Form and wizard (what the user sees)
-2. Tracker (mouse, pauses, fast clicks)
-3. Decider (WebSocket and struggle score)
-4. AI helper (LLM makes wizard steps) and testing
-
-## Who does what
-| Member | Part | Branch |
-|---|---|---|
-| Anika (Team Lead) | 1. Form and wizard | anika-aura-gen |
-| [Name 2] | 2. Tracker | [name2]-aura-gen |
-| [Name 3] | 3. Decider | [name3]-aura-gen |
-| [Name 4] | 4. AI helper and testing | [name4]-aura-gen |
+## Reassignment
+Anika handles the tracker and WebSocket parts until the other members reply.
 
 ## Week plan
-| Week | Anika | Member 2 | Member 3 | Member 4 |
-|---|---|---|---|---|
-| 1 | Build long form | Mouse tracker | Basic server | Choose AI |
-| 2 | CSS styling | Pause and rage click detection | Send data to server | First AI prompt |
-| 3 | Wizard screens | Test tracker | Struggle score | AI creates steps |
-| 4 | Show AI wizard | Connect tracker | Join everything | Final testing |
-
-## If a member is silent for 48 hours
-It is reported to Infotact with proof. Their tasks go to active members and this file is updated.
+| Week | Work |
+|---|---|
+| 1 | Repo, project overview, form fields, work plan |
+| 2 | Prototype, notes, move to Vite React |
+| 3 | WebSocket server, send tracker events, score on the server |
+| 4 | LLM wizard steps, storage, deployment, final report |

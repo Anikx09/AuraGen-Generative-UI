@@ -25,29 +25,44 @@ export default function App() {
     setMode("form");
   };
 
+  const level = score >= STRUGGLE_THRESHOLD ? "hot" : score >= 30 ? "warm" : "";
+
   return (
-    <main style={{ maxWidth: 640, margin: "0 auto", padding: 24, textAlign: "left" }}>
+    <main className="app">
       <h1>Personal loan application</h1>
-      <div style={{ border: "1px solid #888", borderRadius: 8, padding: 12, marginBottom: 16 }}>
-        <strong>Struggle score: {score} / 100</strong> (wizard at {STRUGGLE_THRESHOLD})
-        <button onClick={simulate} style={{ marginLeft: 12 }}>Simulate struggle</button>
-        <ul>
+      <p className="subtitle">
+        Fill in the details below. AuraGen watches for signs of struggle and can switch to a step-by-step view.
+      </p>
+
+      <div className="monitor">
+        <div className="monitor-head">
+          <strong>Live struggle monitor (demo): {score} / 100</strong>
+          <button className="ghost" onClick={simulate}>Simulate struggle</button>
+        </div>
+        <div className="meter">
+          <i className={level} style={{ width: `${score}%` }} />
+        </div>
+        <small className="hint">The wizard starts at {STRUGGLE_THRESHOLD}</small>
+        <ul className="log">
           {log.length === 0 && <li>No events yet.</li>}
           {log.map((e, i) => (
             <li key={i}>{e.time} {e.message}</li>
           ))}
         </ul>
       </div>
+
       {submitted ? (
-        <p>Application submitted (demo).</p>
+        <div className="card"><p>Application submitted (demo).</p></div>
       ) : mode === "wizard" ? (
-        <Wizard
-          steps={generateWizardSteps()}
-          data={data}
-          onChange={setValue}
-          onSubmit={() => setSubmitted(true)}
-          onShowFullForm={showFullForm}
-        />
+        <div className="card">
+          <Wizard
+            steps={generateWizardSteps()}
+            data={data}
+            onChange={setValue}
+            onSubmit={() => setSubmitted(true)}
+            onShowFullForm={showFullForm}
+          />
+        </div>
       ) : (
         <Form data={data} onChange={setValue} onSubmit={() => setSubmitted(true)} />
       )}

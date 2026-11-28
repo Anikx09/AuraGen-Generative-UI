@@ -10,7 +10,7 @@ export default function App() {
   const [submitted, setSubmitted] = useState(false);
   const [mode, setMode] = useState("form");
   const [dismissed, setDismissed] = useState(false);
-  const { score, log, simulate } = useTracker(mode === "form" && !submitted);
+  const { score, log, counts, history, simulate, reset } = useTracker(mode === "form" && !submitted);
   const setValue = (key, value) => setData((d) => ({ ...d, [key]: value }));
 
   // Self-healing: switch to the wizard when the struggle score is high.
@@ -25,7 +25,30 @@ export default function App() {
     setMode("form");
   };
 
+  // Demo helper: go back to a clean start.
+  const resetDemo = () => {
+    reset();
+    setData({});
+    setSubmitted(false);
+    setDismissed(false);
+    setMode("form");
+  };
+
+  // Download the filled form as a JSON file.
+  const downloadJson = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "auragen-application.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const level = score >= STRUGGLE_THRESHOLD ? "hot" : score >= 30 ? "warm" : "";
+  const points = history
+    .map((v, i) => `${(i * 200) / 29},${50 - v * 0.5}`)
+    .join(" ");
 
   return (
     <main className="app">
@@ -37,12 +60,30 @@ export default function App() {
       <div className="monitor">
         <div className="monitor-head">
           <strong>Live struggle monitor (demo): {score} / 100</strong>
-          <button className="ghost" onClick={simulate}>Simulate struggle</button>
+          <span>
+            <button className="ghost" onClick={simulate}>Simulate struggle</button>{" "}
+            <button className="ghost" onClick={resetDemo}>Reset demo</button>
+          </span>
         </div>
         <div className="meter">
           <i className={level} style={{ width: `${score}%` }} />
         </div>
         <small className="hint">The wizard starts at {STRUGGLE_THRESHOLD}</small>
+
+        <p>
+          <small>
+            Erratic moves: <b>{counts.erratic}</b> | Rage clicks: <b>{counts.rage}</b> | Hesitations:{" "}
+            <b>{counts.hesitation}</b>
+          </small>
+        </p>
+
+        <svg viewBox="0 0 200 50" style={{ width: "100%", height: 70 }}>
+          <line x1="0" y1={50 - STRUGGLE_THRESHOLD * 0.5} x2="200" y2={50 - STRUGGLE_THRESHOLD * 0.5}
+            stroke="red" strokeDasharray="3" strokeWidth="0.5" />
+          <polyline points={points} fill="none" stroke="#4f46e5" strokeWidth="1.5" />
+        </svg>
+        <small className="hint">Score over the last 30 seconds (red line = wizard threshold)</small>
+
         <ul className="log">
           {log.length === 0 && <li>No events yet.</li>}
           {log.map((e, i) => (
@@ -52,7 +93,10 @@ export default function App() {
       </div>
 
       {submitted ? (
-        <div className="card"><p>Application submitted (demo).</p></div>
+        <div className="card">
+          <p>Application submitted (demo).</p>
+          <button onClick={downloadJson}>Download form data (JSON)</button>
+        </div>
       ) : mode === "wizard" ? (
         <div className="card">
           <Wizard
